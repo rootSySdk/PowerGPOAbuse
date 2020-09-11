@@ -876,37 +876,120 @@ function Update-GPOVersion {
                 $val2 = "40B6664F-4972-11D1-A7CA-0000F87571E3"
             }
         
-    
+            $entryToUpdate = $GPOADSI."$($properties[2])"
+
             try {
+                
+                if (-not ([System.String]$entryToUpdate -eq "")) {
+
+                    if (-not (([System.String]$entryToUpdate).Contains($val2))) {
+
+                        if (([System.String]$entryToUpdate).Contains($val1)) {
+
+                            $test = ([System.String]$entryToUpdate).Split("[")
+                            $new_values = New-Object System.Collections.Generic.List[System.Object]
+                            $addition = $val2
+
+                            foreach ($i in $test) {
+
+                                $new_values.Add($i.Replace("{","").Replace("}"," ").Replace("]", ""))
+                            }
+
+                            for ($i = 0; $i -lt $new_values.Count; $i++) {
+
+                                if ($new_values[$i].Contains($val1)) {
+
+                                    $toSort = New-Object System.Collections.Generic.List[System.Object]
+                                    $test2 = $new_values[$i].Split()
+                                    foreach ($string in $test2) {
             
-                if (-not ([System.String]($GPOADSI."$($properties[2])") -eq "")) {
+                                        if (-not ($string -eq "")) {
 
-                    $toAdd = ""
-                    if (-not (([System.String]$GPOADSI."$($properties[2])").Contains($val1))) {
+                                            $toSort.Add($string)
 
-                        $toAdd = -join @($toAdd, "{$val1}")
-                        Write-Verbose "adding {$val1}."
-                    }
-                    if (-not (([System.String]$GPOADSI."$($properties[2])").Contains($val2))) {
+                                        }
+                                    }
+                                    $toSort.Add($addition)
+                                    $toSort = $toSort | Sort-Object
+                                    $new_values[$i] = $test2[0]
 
-                        $toAdd = -join @($toAdd, "{$val2}")
-                        Write-Verbose "adding {$val2}."
-                    }
+                                    foreach ($val in $toSort) {
 
-                    if (-not ($toAdd.Length -eq 0)) {
+                                        $new_values[$i] += " " + $val
+                                    }
+                                }
+                            }
+                            $new_values2 = New-Object System.Collections.Generic.List[System.Object]
 
-                        $actualValue = ([System.String]$GPOADSI."$($properties[2])").Split('[')[1].Split(']')[0]
-                        $futureValue = -join @("[",$actualValue,$toAdd,"]")
-                        $GPOADSI."$($properties[2])" = $futureValue
+                            for ($i = 0; $i -lt $new_values.Count; $i++) {
+
+                                if (-not ($new_values[$i] -eq "")) {
+
+                                    $value1 = $new_values[$i].Split()
+                                    $new_val = ""
+                                    foreach ($string in $value1) {
+
+                                        if (-not ($new_val.Contains($string))) {
+
+                                            $new_val += "{" + $string + "}"
+                                        }
+                                    }
+
+                                $new_val = "[" + $new_val + "]"
+                                $new_values2.Add($new_val)
+                                }
+                            }
+
+                            $entryToUpdate = (-join $new_values2)
+                        } else {
+
+                            $test = ([System.String]$entryToUpdate).Split("[")
+                            $new_values = New-Object System.Collections.Generic.List[System.Object]
+
+                            $null = foreach ($i in $test) {
+
+                                $new_values.Add($i.Replace("{","").Replace("}"," ").Replace("]", ""))
+                            }
+
+                            $addition = $val1 + " " + $val2
+                            $new_values.Add($addition)
+                            $new_values = $new_values | Sort-Object
+                            $new_values2 = New-Object System.Collections.Generic.List[System.Object]
+
+                            for ($i = 0; $i -lt $new_values.Count; $i++) {
+
+                                if (-not ($new_values[$i] -eq "")) {
+                            
+                                    $value1 = ($new_values[$i]).Split()
+                            
+                                    $new_val = ""
+                            
+                                    foreach ($string in $value1) {
+                                        
+                                        if (-not ($string -eq "")) {
+                            
+                                            $new_val += "{" + $string + "}"
+                                        }
+                                    }
+                                    $new_val = "[" + $new_val + "]"
+                                    $new_values2.Add($new_val)
+                                }
+                            }
+
+                            $GPOADSI."$($properties[2])" = (-join $new_values2)
+                        }
+                    } else {
+
+                        Write-Verbose "$($properties[2]) was already set"
                     }
                 } else {
 
-                    $GPOADSI."$($properties[2])" = -join @("[{", $val1, "}{", $val2, "}]")
+                    $GPOADSI."$($properties[2])" = -join @([System.String]$entryToUpdate, "[{", $val1, "}{", $val2, "}]")
                 }
             }
             catch {
                     
-                $GPOADSI."$($properties[2])" = -join @("[{", $val1, "}{", $val2, "}]")
+                $GPOADSI."$($properties[2])" = -join @([System.String]$entryToUpdate, "[{", $val1, "}{", $val2, "}]")
             }
         }
         if ($Function -eq "NewImmediateTask") {
@@ -917,40 +1000,97 @@ function Update-GPOVersion {
     
             try {
             
-                if (-not ([System.String]($GPOADSI."$($properties[2])") -eq "")) {
+                if (-not ([System.String]$entryToUpdate -eq "")) {
 
-                    $toAdd = ""
-                    if (-not (([System.String]$GPOADSI."$($properties[2])").Contains($val1))) {
-    
-                        $toAdd = -join @($toAdd, "{$val1}")
-                        Write-Verbose "adding {$val1}."
-                    }
-                    if (-not (([System.String]$GPOADSI."$($properties[2])").Contains($val2))) {
-    
-                        $toAdd = -join @($toAdd, "{$val2}")
-                        Write-Verbose "adding {$val2}."
+                    if ($entryToUpdate.Contains($val2)) {
+
+                        $new_values = New-Object System.Collections.Generic.List[System.object]
+                        $test = $entryToUpdate.Split("[")
+                        foreach ($i in $test) {
+                    
+                            $new_values.Add($i.Replace("{","").Replace("}"," ").Replace("]", ""))
+                        }
+                    
+                        if (-not ($entryToUpdate.Contains($val1))) {
+                    
+                            $new_values.Add($val1 + " " + $val2)
+                        } elseif ($entryToUpdate.Contains($val1)) {
+                    
+                            for ($k = 0; $k -lt $new_values.Count; $k++) {
+                                
+                                if ($new_values[$k].Contains($val1)) {
+                    
+                                    $toSort = New-Object System.Collections.Generic.List[System.Object]
+                                    $test2 = $new_values[$k].Split()
+                                    foreach ($string in $test2) {
+                    
+                                        $toSort.Add($string)
+                                    }
+                                    $toSort.Add($val2)
+                                    $toSort = $toSort | Sort-Object
+                                    $new_values[$k] = $test2[0]
+                                    foreach ($val in $toSort) {
+                    
+                                        $new_values[$k] += " " + $val; 
+                                    }
+                                }
+                            }
+                        }
+                        if (-not $entryToUpdate.Contains($val3)) {
+                    
+                            $new_values.Add($val3 + " " + $val2)
+                        } elseif ($entryToUpdate.Contains($val3)) {
+                    
+                            for ($k = 0; $k -lt $new_values.Count; $k++) {
+                    
+                                if ($new_values[$k].Contains($val3)) {
+                    
+                                    $toSort = New-Object System.Collections.Generic.List[System.Object]
+                                    $test2 = $new_values[$k].Split()
+                                    foreach ($string in $test2) {
+                    
+                                        $toSort.Add($string)
+                                    }
+                                    $toSort.Add($val2)
+                                    $toSort = $toSort | Sort-Object
+                                    $new_values[$k] = $test2[0]
+                                    foreach ($val in $toSort) {
+                    
+                                        $new_values[$k] += " " + $val; 
+                                    }
+                                }
+                            }
+                        }
+                    
+                        $new_values = $new_values | Sort-Object
+                        $new_values2 = New-Object System.Collections.Generic.List[System.Object]
+                    
+                        for ($i = 0; $i -lt $new_values.Count; $i++) {
+                    
+                            if (-not ($new_values[$i] -eq "")) {
+                    
+                                $value1 = $new_values[$i].Split()
+                                $new_val = ""
+                                foreach ($string in $value1) {
+                    
+                                    $new_val += "{" + $string + "}"
+                                }
+                    
+                                $new_val = "[" + $new_val + "]"
+                                $new_values2.Add($new_val)
+                            }
+                        }
                     }
 
-                    if (-not (([System.String]$GPOADSI."$($properties[2])").Contains($val3))) {
-
-                        $toAdd = -join @($toAdd, "{$val3}")
-                        Write-Verbose "adding {$val3}."
-                    }
-    
-                    if (-not ($toAdd.Length -eq 0)) {
-    
-                        $actualValue = ([System.String]$GPOADSI."$($properties[2])").Split('[')[1].Split(']')[0]
-                        $futureValue = -join @("[",$actualValue,$toAdd,"]")
-                        $GPOADSI."$($properties[2])" = $futureValue
-                    }
+                    $GPOADSI."$($properties[2])" = -join $new_values2
                 } else {
     
-                    $GPOADSI."$($properties[2])" = -join @("[{", $val1, "}{", $val2, "}{", $val3, "}]")
+                    $GPOADSI."$($properties[2])" = -join @([System.String]$entryToUpdate,"[{", $val1, "}{", $val2, "}{", $val3, "}]")
                 }
             }
             catch {
                         
-                $GPOADSI."$($properties[2])" = -join @("[{", $val1, "}{", $val2, "}{", $val3, "}]")
+                $GPOADSI."$($properties[2])" = -join @([System.String]$entryToUpdate,"[{", $val1, "}{", $val2, "}{", $val3, "}]")
             }
         }
         Write-Verbose "Updating GPT.ini"
@@ -1147,7 +1287,7 @@ $right = *$UserSid
             $secondBackslash = $GPOPath.SubString(2).IndexOf('\')
             $GPOPath = -join @("\\$DC", $GPOPath.SubString(2).SubString($secondBackslash))
         }
-        New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs | Out-Null
+        $null = New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs 
         $GPOPath = -join @($share, ":")
         $GPOInipath = -join @($GPOPath, '\GPT.ini')
 
@@ -1162,7 +1302,7 @@ $right = *$UserSid
             
         if (-not (Test-Path -Path $path )) {
             
-            New-Item -Path $path -ItemType Directory  | Out-Null
+            $null = New-Item -Path $path -ItemType Directory  
         }
         $path = -join @($path, 'GptTmpl.inf')
         if (Test-Path -Path $path ) {
@@ -1202,7 +1342,7 @@ $right = *$UserSid
         } else {
 
             Write-Host -ForegroundColor Green "[+] Creating file $path"
-            New-Item -Path $path -ItemType File -Force | Out-Null
+            $null = New-Item -Path $path -ItemType File -Force
             Set-Content -Path $path -Value $text 
             $arguments = @{}
             $arguments['Credential'] = $Credential
@@ -1339,7 +1479,7 @@ Revision=1
         $share = -join ((65..90) + (97..122) | Get-Random -Count 6 | ForEach-Object {[System.Char]$_})
         if ($env:LOGONSERVER) {
 
-            $GPOPath = @($env:LOGONSERVER, $GPOPath.SubString(2))
+            $GPOPath = -join @($env:LOGONSERVER, ".", $GPOPath.SubString(2))
         } else {
 
             if ($PSBoundParameters['DomainController']) {
@@ -1361,7 +1501,7 @@ Revision=1
             $secondBackslash = $GPOPath.SubString(2).IndexOf('\')
             $GPOPath = -join @("\\$DC", $GPOPath.SubString(2).SubString($secondBackslash))
         }
-        New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs | Out-Null
+        $null = New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs
         $GPOPath = -join @($share, ":")
         $GPOInipath = -join @($GPOPath, '\GPT.ini')
 
@@ -1376,7 +1516,7 @@ Revision=1
             
         if (-not (Test-Path -Path $path )) {
             
-            New-Item -ItemType Directory -Path $path  | Out-Null
+            $null = New-Item -ItemType Directory -Path $path
         }
         $path = -join @($path, 'GptTmpl.inf')
         if (Test-Path -Path $path ) {
@@ -1433,7 +1573,7 @@ Revision=1
         } else {
 
             Write-Host -ForegroundColor Green "[+] Creating file $path"
-            New-Item -Path $path -ItemType File -Force | Out-Null
+            $null = New-Item -Path $path -ItemType File -Force
             $new_text = -join $start,$text
             Set-Content -Path $path -Value $new_text
             $arguments = @{}
@@ -1569,7 +1709,7 @@ function Add-ComputerScript {
         $share = -join ((65..90) + (97..122) | Get-Random -Count 6 | ForEach-Object {[System.Char]$_})
         if ($env:LOGONSERVER) {
 
-            $GPOPath = @($env:LOGONSERVER, $GPOPath.SubString(2))
+            $GPOPath = -join @($env:LOGONSERVER, ".", $GPOPath.SubString(2))
         } else {
 
             if ($PSBoundParameters['DomainController']) {
@@ -1591,7 +1731,7 @@ function Add-ComputerScript {
             $secondBackslash = $GPOPath.SubString(2).IndexOf('\')
             $GPOPath = -join @("\\$DC", $GPOPath.SubString(2).SubString($secondBackslash))
         }
-        New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs | Out-Null
+        $null = New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs
         $GPOPath = -join @($share, ":")
         $GPT_path = -join @($GPOPath, '\GPT.ini')
 
@@ -1607,7 +1747,7 @@ function Add-ComputerScript {
     
         if (-not (Test-Path -Path $path)) {
     
-            New-Item -ItemType Directory -Path $path | Out-Null
+            $null = New-Item -ItemType Directory -Path $path
         }
         $path = -join @($path, $ScriptName)
         if (Test-Path -Path $path) {
@@ -1681,7 +1821,7 @@ $(-join @($max, "Parameter"))=
         }
 
         Write-Host -ForegroundColor green "[+] Creating new startup script..."
-        New-Item -Path $path -ItemType File -Force | Out-Null
+        $null = New-Item -Path $path -ItemType File -Force
         Set-Content -Path $path -Value $ScriptContent
 
         $arguments = @{}
@@ -1820,7 +1960,7 @@ function Add-UserScript {
         $share = -join ((65..90) + (97..122) | Get-Random -Count 6 | ForEach-Object {[System.Char]$_})
         if ($env:LOGONSERVER) {
 
-            $GPOPath = @($env:LOGONSERVER, $GPOPath.SubString(2))
+            $GPOPath = -join @($env:LOGONSERVER, ".", $GPOPath.SubString(2))
         } else {
 
             if ($PSBoundParameters['DomainController']) {
@@ -1842,7 +1982,7 @@ function Add-UserScript {
             $secondBackslash = $GPOPath.SubString(2).IndexOf('\')
             $GPOPath = -join @("\\$DC", $GPOPath.SubString(2).SubString($secondBackslash))
         }
-        New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs | Out-Null
+        $null = New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs
         $GPOPath = -join @($share, ":")
         $GPT_path = -join @($GPOPath, '\GPT.ini')
 
@@ -1858,7 +1998,7 @@ function Add-UserScript {
     
         if (-not (Test-Path -Path $path)) {
     
-            New-Item -ItemType Directory -Path $path | Out-Null
+            $null = New-Item -ItemType Directory -Path $path
         }
         $path = -join @($path, $ScriptName)
         if (Test-Path -Path $path) {
@@ -1932,7 +2072,7 @@ $(-join @($max, "Parameter"))=
         }
 
         Write-Host -ForegroundColor green "[+] Creating new startup script..."
-        New-Item -Path $path -ItemType File -Force | Out-Null
+        $null = New-Item -Path $path -ItemType File -Force
         Set-Content -Path $path -Value $ScriptContent
 
         $arguments = @{}
@@ -2085,7 +2225,7 @@ function Add-ComputerTask {
         $share = -join ((65..90) + (97..122) | Get-Random -Count 6 | ForEach-Object {[System.Char]$_})
         if ($env:LOGONSERVER) {
 
-            $GPOPath = @($env:LOGONSERVER, $GPOPath.SubString(2))
+            $GPOPath = -join @($env:LOGONSERVER, ".", $GPOPath.SubString(2))
         } else {
 
             if ($PSBoundParameters['DomainController']) {
@@ -2107,7 +2247,7 @@ function Add-ComputerTask {
             $secondBackslash = $GPOPath.SubString(2).IndexOf('\')
             $GPOPath = -join @("\\$DC", $GPOPath.SubString(2).SubString($secondBackslash))
         }
-        New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs | Out-Null
+        $null = New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs
         $GPOPath = -join @($share, ":")
         $GPT_path = -join @($GPOPath, '\GPT.ini')
 
@@ -2122,7 +2262,7 @@ function Add-ComputerTask {
     
             if (-not (Test-Path -Path $path)) {
     
-                New-Item -ItemType Directory -Path $path | Out-Null
+                $null = New-Item -ItemType Directory -Path $path
             } 
     
             $path = -join @($path,'ScheduledTasks.xml')
@@ -2159,7 +2299,7 @@ function Add-ComputerTask {
             } else {
     
                 Write-Host -ForegroundColor Green "[+] Creating file $path"
-                New-Item -Path $path -ItemType File | Out-Null
+                $null = New-Item -Path $path -ItemType File
                 $content = @"
 $start
 $ImmediateXmlTask
@@ -2316,7 +2456,7 @@ function Add-UserTask {
         $share = -join ((65..90) + (97..122) | Get-Random -Count 6 | ForEach-Object {[System.Char]$_})
         if ($env:LOGONSERVER) {
 
-            $GPOPath = @($env:LOGONSERVER, $GPOPath.SubString(2))
+            $GPOPath = -join @($env:LOGONSERVER, ".", $GPOPath.SubString(2))
         } else {
 
             if ($PSBoundParameters['DomainController']) {
@@ -2338,7 +2478,7 @@ function Add-UserTask {
             $secondBackslash = $GPOPath.SubString(2).IndexOf('\')
             $GPOPath = -join @("\\$DC", $GPOPath.SubString(2).SubString($secondBackslash))
         }
-        New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs | Out-Null
+        $null = New-PSDrive -PSProvider FileSystem -Name $share -Root $GPOPath @commonArgs
         $GPOPath = -join @($share, ":")
         $GPT_path = -join @($GPOPath, '\GPT.ini')
 
@@ -2353,7 +2493,7 @@ function Add-UserTask {
     
             if (-not (Test-Path -Path $path)) {
     
-                New-Item -ItemType Directory -Path $path | Out-Null
+                $null = New-Item -ItemType Directory -Path $path
             } 
     
             $path = -join @($path,'ScheduledTasks.xml')
@@ -2390,7 +2530,7 @@ function Add-UserTask {
             } else {
     
                 Write-Host -ForegroundColor Green "[+] Creating file $path"
-                New-Item -Path $path -ItemType File | Out-Null
+                $null = New-Item -Path $path -ItemType File
                 $content = @"
 $start
 $ImmediateXmlTask
